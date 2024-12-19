@@ -1,9 +1,9 @@
 
-# Official Website - MLSC Amity
+# Color Detection Website Project
 
-Welcome to the MLSC Amity website repository! We encourage community contributions to enhance this project.
+Welcome to the Color Detection Website repository! We encourage community contributions to enhance this project.
 
-You can see the **live demo** : [www.mlsc-amity.tech](https://www.mlsc-amity.tech)
+You can see the **live demo** : [https://mlsc-amity.github.io/color-detector/](https://mlsc-amity.github.io/color-detector/)
 
 ## Contributing Guidelines
 
