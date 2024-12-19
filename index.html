@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://chir.ag/projects/ntc/ntc.js"></script>
+    <title>Camera Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
+
+        video,
+        canvas {
+            display: block;
+            margin: 10px auto;
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 5%;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px auto;
+            display: block;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        p {
+            font-size: 1rem;
+        }
+
+        /* Dot style */
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Open Camera & Capture Image</h1>
+    <!-- Video Element to Show Camera Stream -->
+    <video id="video" autoplay playsinline></video>
+
+    <!-- Button to Capture the Image -->
+    <button id="captureBtn">Capture Image</button>
+
+    <!-- Canvas to Display Captured Image -->
+    <canvas id="canvas"></canvas>
+    <div style="border: 2px solid black;">
+        <p>HEX Code: <span id="hex_code">None</span></p>
+        <p>Color Name: <span id="hex_name">None</span></p>
+    </div>
+
+    <script>
+        // Get references to elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const context = canvas.getContext('2d');
+        const hexCode = document.getElementById("hex_code");
+        const hexName = document.getElementById("hex_name");
+
+        let capturedImageData = null;
+
+        // Ask for permission and access the camera
+        navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            })
+            .then(stream => {
+                video.srcObject = stream; // Display video stream in video element
+
+                // Adjust canvas size based on video stream
+                video.onloadedmetadata = function () {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+            })
+            .catch(err => {
+                console.error('Error accessing the camera: ', err);
+                alert('Could not access the camera!');
+            });
+
+        // Capture the image when button is clicked
+        captureBtn.addEventListener('click', () => {
+            if (!video.videoWidth) return; // Ensure the video stream has loaded
+            // Match canvas size to video stream size
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            // Draw the current video frame onto the canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Save the image data to re-draw it later
+            capturedImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        });
+
+        // Handle the touch or click event on the canvas
+        canvas.addEventListener('click', (event) => {
+            if (!capturedImageData) return; // If no image is captured, do nothing
+
+            // Calculate the correct position considering the device scaling
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;  // Scaling factor for width
+            const scaleY = canvas.height / rect.height; // Scaling factor for height
+
+            // Get the click position on the canvas
+            const x = (event.clientX - rect.left) * scaleX;
+            const y = (event.clientY - rect.top) * scaleY;
+
+            // Get the pixel data from the canvas
+            const pixel = context.getImageData(x, y, 1, 1).data;
+            const red = pixel[0];
+            const green = pixel[1];
+            const blue = pixel[2];
+
+            // Convert RGB to HEX
+            const hex = rgbToHex(red, green, blue);
+
+            // Update the UI with the selected color
+            hexCode.innerText = hex;
+            const n_match = ntc.name(hex);
+            hexName.innerText = n_match[1]; // Color name
+
+            // Redraw the captured image and then draw the new dot
+            context.putImageData(capturedImageData, 0, 0); // Re-draw the captured image
+
+            // Draw a new dot on the captured image (canvas) at the selected position
+            drawDot(x, y, hex);
+        });
+
+        // Function to convert RGB to HEX
+        function rgbToHex(r, g, b) {
+            return (
+                "#" +
+                [r, g, b]
+                    .map((x) => x.toString(16).padStart(2, "0"))
+                    .join("")
+            );
+        }
+
+        // Function to draw a dot on the captured image (canvas)
+        function drawDot(x, y, color) {
+            context.beginPath();
+            context.arc(x, y, 5, 0, 2 * Math.PI); // Draw a circle with radius 5
+            context.fillStyle = "red"; // Use the selected color
+            context.fill(); // Fill the circle
+        }
+    </script>
+</body>
+
+</html>
